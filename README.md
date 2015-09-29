@@ -7,7 +7,7 @@ There are a couple things it changes vs ES5 which allow behavior to be overridde
 1. String functions which call things related to RegExps can be overridden using Symbol-named methods on RegExps, e.g., `RegExp.prototype[Symbol.match]`, `RegExp.prototype[Symbol.search]`, etc.
 2. `String.prototype.split` calls `RegExp.prototype.exec`, rather than calling the underlying [[Match]] internal algorithm (or, invoke the _matcher_ internal algorithm defined by the RegExp, in ES2015 terminology). Previously, only `String.prototype.match`, `String.prototype.search` and `String.prototype.replace` invoked `RegExp.prototype.exec`.
 
-This proposal suggests reverting 2. and instead using 1. as the sole new mechanism for making RegExps more flexible and subclassable. To reinforce the lack of flexibility with flags in 3., the [[OriginalFlags]] mechanism would be kept, but all internal algorithms which look up flag values would read them from [[OriginalFlags]] directly, rather than using Get().
+This proposal suggests reverting 2. and instead using 1. as the sole new mechanism for making RegExps more flexible and subclassable.
 
 ## Motivation
 
