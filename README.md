@@ -3,6 +3,7 @@
 ## ES2015 makes regular expressions subclassable.
 
 There are a couple things it changes vs ES5 which allow behavior to be overridden:
+
 1. String functions which call things related to RegExps can be overridden using Symbol-named methods on RegExps, e.g., `RegExp.prototype[Symbol.match]`, `RegExp.prototype[Symbol.search]`, etc.
 2. `String.prototype.split` calls `RegExp.prototype.exec`, rather than calling the underlying [[Match]] internal algorithm (or, invoke the _matcher_ internal algorithm defined by the RegExp, in ES2015 terminology). Previously, only `String.prototype.match`, `String.prototype.search` and `String.prototype.replace` invoked `RegExp.prototype.exec`.
 
