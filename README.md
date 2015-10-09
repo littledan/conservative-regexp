@@ -5,7 +5,7 @@
 There are a couple things it changes vs ES5 which allow behavior to be overridden:
 
 1. String functions which call things related to RegExps can be overridden using Symbol-named methods on RegExps, e.g., `RegExp.prototype[Symbol.match]`, `RegExp.prototype[Symbol.search]`, etc.
-2. `String.prototype.split` calls `RegExp.prototype.exec`, rather than calling the underlying [[Match]] internal algorithm (or, invoke the _matcher_ internal algorithm defined by the RegExp, in ES2015 terminology). Previously, only `String.prototype.match`, `String.prototype.search` and `String.prototype.replace` invoked `RegExp.prototype.exec`.
+2. The RegExp backends to `String.prototype.split`, `String.prototype.match`, `String.prototype.search` and `String.prototype.replace` call out to the method `exec` on the RegExp provided, rather than calling the initial value of `RegExp.prototype.exec` or the underlying [[Match]] internal algorithm (or, invoke the _matcher_ internal algorithm defined by the RegExp, in ES2015 terminology).
 
 This proposal suggests reverting 2. and instead using 1. as the sole new mechanism for making RegExps more flexible and subclassable.
 
@@ -17,13 +17,17 @@ This isn't just an implementation detail. A user who either monkeypatches `RegEx
 
 However, the extra allocation comes at a real performance cost. It might be possible to fix that performance cost with more advanced implementation techniques, but this has not been demonstrated. The value to the user of the flexibility granted here in ES2015 seems more limited, when a RegExp subclass is free to implement its own `Symbol.split` method already and doesn't need to override `RegExp.prototype.exec` to get there.
 
+It is a bit redundant to have multiple mechanisms for subclasses of `RegExp` to get at their customization. ES2015 gives two, but the `RegExp.prototype.exec` override doesn't work for `String.prototype.split`. It would be rather confusing to have overriding `RegExp.prototype.exec` affect most, but not all, of the RegExp methods. Given that they themselves can be individually overridden, and it is not needed for backwards compatibility with ES5, it seems unnecessary to provide this secondary mechanism.
+
 ## What to change in the spec
 
-The method `RegExp.prototype[Symbol.split]` should instead call out to a version of RegExpBuiltinExec which is factored out more like the [[Match]] internal algorithm of ES5. This algorithm returns a tuple giving the results, rather than imperatively mutating the input RegExp. It canbe called internally by RegExpBuiltinExec.
+The method `RegExp.prototype[Symbol.split]` should instead call out to a part of RegExpBuiltinExec which is factored out more like the [[Match]] internal algorithm of ES5. This algorithm returns a tuple giving the results, rather than imperatively mutating the input RegExp. It can be called internally by RegExpBuiltinExec.
+
+The other methods, `RegExp.prototype[Symbol.search]`, `RegExp.prototype[Symbol.match]` and `RegExp.prototype[Symbol.replace]` should call out directly to RegExpBuiltinExec, effectively matching their ES5 behavior and disallowing any replacement for `RegExp.prototype.exec` to take effect in their execution.
 
 ## Downside
 
-The major disadvantage is that it is more work to effectively implement a RegExp subclass. Rather than just overriding `RegExp.prototype.exec` and expecting that that code will be reached from all paths, a user will also have to override `RegExp.prototype[Symbol.split]`.
+The major disadvantage is that it is more work to effectively implement a RegExp subclass. Rather than just overriding `RegExp.prototype.exec` and expecting that that code will be reached from all paths, a user will also have to override `RegExp.prototype[Symbol.split]` and three other methods. However, subclassing RegExp is a rather specialized thing to do, and the duplication here may be the least of the users' concerns.
 
 ## A less important suggestion
 
